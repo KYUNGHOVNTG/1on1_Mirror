@@ -11,11 +11,15 @@
 import asyncio
 import logging
 import os
+import sys
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
-# .env 로드 (스크립트 실행 시 필수)
+# 프로젝트 루트를 Python 경로에 추가 (어디서든 실행 가능하도록)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, BASE_DIR)
+
+# .env 로드 (스크립트 실행 시 필수)
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 from sqlalchemy import select
