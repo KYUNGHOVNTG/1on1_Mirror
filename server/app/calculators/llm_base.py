@@ -32,7 +32,7 @@ class LLMBaseCalculator(BaseCalculator[TInput, TOutput]):
             logger.warning("ANTHROPIC_API_KEY is not set. LLM features will not work.")
         
         self.client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-        self.model = "claude-3-5-sonnet-20241022"  # Latest stable Sonnet version
+        self.model = "claude-sonnet-4-20250514"  # Latest stable Sonnet version
         
     async def _get_llm_insight(
         self,
