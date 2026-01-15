@@ -122,7 +122,7 @@ class OneOnOneService:
             speech_task = speech_analyzer.calculate(whisper_data)
             goal_task = goal_calculator.calculate(GoalAlignmentInput(
                 goal_text=goal_text,
-                transcript=full_transcript
+                conversation_transcript=full_transcript
             ))
             coaching_task = coaching_calculator.calculate(CoachingStyleInput(
                 transcript=full_transcript
