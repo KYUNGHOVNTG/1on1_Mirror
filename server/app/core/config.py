@@ -142,6 +142,18 @@ class Settings(BaseSettings):
     )
 
     # ====================
+    # AI Service Settings
+    # ====================
+    ANTHROPIC_API_KEY: str = Field(
+        default="",
+        description="Anthropic API 키"
+    )
+    OPENAI_API_KEY: str = Field(
+        default="",
+        description="OpenAI API 키 (Whisper STT용)"
+    )
+
+    # ====================
     # Domain Plugin Settings
     # ====================
     # 여기에 도메인별 설정을 추가할 수 있습니다

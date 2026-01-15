@@ -255,7 +255,7 @@ async def analyze_data(request: SampleAnalysisRequest, db: AsyncSession = Depend
 
 ### 사전 준비사항
 
-- **Python 3.12+** ([다운로드](https://www.python.org/downloads/))
+- **Python 3.12** ([다운로드](https://www.python.org/downloads/))
 - **Node.js 18+** ([다운로드](https://nodejs.org/))
 - **Supabase 계정** (권장) - [무료 가입](https://supabase.com)
 - 또는 **PostgreSQL** (로컬 개발) - [다운로드](https://www.postgresql.org/download/)
