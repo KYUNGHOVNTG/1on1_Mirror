@@ -1,19 +1,17 @@
 /**
- * Auth Store (Skeleton)
+ * Auth Store (Google OAuth)
  *
  * 인증 상태 관리
- *
- * @example
- * const { user, login, logout } = useAuthStore();
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
+  picture?: string;
   // TODO: 추가 사용자 정보
 }
 
@@ -23,9 +21,8 @@ interface AuthState {
   isAuthenticated: boolean;
 
   // Actions
-  login: (email: string, password: string) => Promise<void>;
+  login: (user: User, token: string) => void;
   logout: () => void;
-  setUser: (user: User) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -35,21 +32,12 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
 
-      login: async (email: string, password: string) => {
-        // TODO: API 호출로 로그인 처리
-        // const response = await apiClient.post('/auth/login', { email, password });
-        // set({ user: response.data.user, token: response.data.token, isAuthenticated: true });
-
-        console.log('Login called with:', email, password);
+      login: (user: User, token: string) => {
+        set({ user, token, isAuthenticated: true });
       },
 
       logout: () => {
-        // TODO: 토큰 삭제, 상태 초기화
         set({ user: null, token: null, isAuthenticated: false });
-      },
-
-      setUser: (user: User) => {
-        set({ user, isAuthenticated: true });
       },
     }),
     {

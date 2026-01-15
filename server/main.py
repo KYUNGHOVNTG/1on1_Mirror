@@ -19,6 +19,7 @@ from server.app.core.logging import setup_logging, get_logger
 from server.app.core.middleware import RequestIDMiddleware, ExternalLoggingMiddleware
 from server.app.api.v1.router import api_router
 from server.app.shared.exceptions import ApplicationException
+import server.app.core.models  # noqa: F401
 
 # 로거 초기화
 logger = get_logger(__name__)
@@ -58,7 +59,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # 개발 환경에서는 테이블 자동 생성 (운영에서는 사용 금지!)
     if settings.ENVIRONMENT == "development" and settings.DEBUG:
         print("⚠️  Development mode: Creating database tables...")
-        # await DatabaseManager.create_tables()
+        try:
+            await DatabaseManager.create_tables()
+        except Exception as e:
+            print(f"⚠️  DB 테이블 생성 실패 (무시됨): {e}")
 
     yield
 
