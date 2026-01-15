@@ -4,7 +4,7 @@ Speech analyzer calculator for analyzing conversation dynamics from Whisper tran
 
 from pydantic import BaseModel, Field
 
-from app.calculators.base import BaseCalculator
+from server.app.calculators.base import BaseCalculator
 
 
 class SpeechSegment(BaseModel):

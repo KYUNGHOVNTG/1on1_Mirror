@@ -4,12 +4,12 @@ Test suite for calculator modules.
 
 import asyncio
 
-from app.calculators.speech_analyzer import (
+from server.app.calculators.speech_analyzer import (
     SpeechAnalyzer,
     SpeechSegment,
     WhisperTranscription,
 )
-from app.calculators.goal_alignment_calculator import (
+from server.app.calculators.goal_alignment_calculator import (
     GoalAlignmentCalculator,
     GoalAlignmentInput,
 )

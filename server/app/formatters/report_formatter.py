@@ -9,10 +9,10 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
 
-from app.calculators.coaching_style_calculator import CoachingStyleResult
-from app.calculators.goal_alignment_calculator import GoalAlignmentResult
-from app.calculators.safety_score_calculator import SafetyScoreResult
-from app.calculators.speech_analyzer import SpeechAnalysisResult
+from server.app.calculators.coaching_style_calculator import CoachingStyleResult
+from server.app.calculators.goal_alignment_calculator import GoalAlignmentResult
+from server.app.calculators.safety_score_calculator import SafetyScoreResult
+from server.app.calculators.speech_analyzer import SpeechAnalysisResult
 
 
 # ====================

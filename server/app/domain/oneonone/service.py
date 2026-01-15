@@ -8,12 +8,12 @@ from fastapi import UploadFile
 from openai import AsyncOpenAI
 from sqlalchemy import select
 
-from app.core.config import settings
-from app.core.logging import get_logger
-from app.domain.oneonone.models.session import OneOnOneSession, Goal
-from app.domain.oneonone.repositories.session_repository import SessionRepository
-from app.domain.oneonone.repositories.goal_repository import GoalRepository
-from app.calculators import (
+from server.app.core.config import settings
+from server.app.core.logging import get_logger
+from server.app.domain.oneonone.models.session import OneOnOneSession, Goal
+from server.app.domain.oneonone.repositories.session_repository import SessionRepository
+from server.app.domain.oneonone.repositories.goal_repository import GoalRepository
+from server.app.calculators import (
     SpeechAnalyzer,
     GoalAlignmentCalculator,
     CoachingStyleCalculator,
@@ -25,7 +25,7 @@ from app.calculators import (
     CoachingStyleInput,
     SafetyScoreInput
 )
-from app.formatters.report_formatter import ReportFormatter
+from server.app.formatters.report_formatter import ReportFormatter
 
 logger = get_logger(__name__)
 

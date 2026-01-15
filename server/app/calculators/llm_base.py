@@ -8,9 +8,9 @@ from typing import Type, TypeVar
 from anthropic import AsyncAnthropic, APIError
 from pydantic import BaseModel
 
-from app.calculators.base import BaseCalculator
-from app.core.config import settings
-from app.core.logging import get_logger
+from server.app.calculators.base import BaseCalculator
+from server.app.core.config import settings
+from server.app.core.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -2,12 +2,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.domain.oneonone.service import OneOnOneService
-from app.domain.oneonone.repositories.session_repository import SessionRepository
-from app.domain.oneonone.repositories.goal_repository import GoalRepository
-from app.formatters.report_formatter import ReportFormatter
-from app.domain.oneonone.schemas.session import AnalysisResponse, ReportResponse
+from server.app.core.database import get_db
+from server.app.domain.oneonone.service import OneOnOneService
+from server.app.domain.oneonone.repositories.session_repository import SessionRepository
+from server.app.domain.oneonone.repositories.goal_repository import GoalRepository
+from server.app.formatters.report_formatter import ReportFormatter
+from server.app.domain.oneonone.schemas.session import AnalysisResponse, ReportResponse
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 

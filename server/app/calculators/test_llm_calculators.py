@@ -8,15 +8,15 @@ import asyncio
 import os
 from typing import Any
 
-from app.calculators.coaching_style_calculator import (
+from server.app.calculators.coaching_style_calculator import (
     CoachingStyleCalculator,
     CoachingStyleInput,
 )
-from app.calculators.safety_score_calculator import (
+from server.app.calculators.safety_score_calculator import (
     SafetyScoreCalculator,
     SafetyScoreInput,
 )
-from app.core.config import settings
+from server.app.core.config import settings
 
 
 # Sample transcript for testing

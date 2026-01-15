@@ -7,7 +7,7 @@ from collections import Counter
 
 from pydantic import BaseModel, Field
 
-from app.calculators.base import BaseCalculator
+from server.app.calculators.base import BaseCalculator
 
 
 class GoalAlignmentInput(BaseModel):

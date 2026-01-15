@@ -4,7 +4,7 @@ Calculator for analyzing coaching vs directive communication styles using LLM.
 
 from pydantic import BaseModel, Field
 
-from app.calculators.llm_base import LLMBaseCalculator
+from server.app.calculators.llm_base import LLMBaseCalculator
 
 
 class CoachingStyleInput(BaseModel):
