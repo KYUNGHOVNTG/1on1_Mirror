@@ -85,9 +85,9 @@ class OneOnOneService:
                 speaker = "manager" if i % 2 == 0 else "member"
                 labeled_segments.append(SpeechSegment(
                     speaker=speaker,
-                    text=seg['text'],
-                    start_time=seg['start'],
-                    end_time=seg['end']
+                    text=seg.text,
+                    start_time=seg.start,
+                    end_time=seg.end
                 ))
 
             whisper_data = WhisperTranscription(
