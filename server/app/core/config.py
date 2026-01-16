@@ -150,6 +150,16 @@ class Settings(BaseSettings):
         default="",
         description="Google OAuth Client Secret"
     )
+    GOOGLE_OAUTH_REDIRECT_URI: str = Field(
+        default="http://localhost:3000/calendar/callback",
+        description="Google OAuth Redirect URI"
+    )
+
+    # Calendar Settings
+    CALENDAR_WEBHOOK_URL: str = Field(
+        default="http://localhost:8000/api/v1/calendar/webhook",
+        description="구글 캘린더 Webhook URL"
+    )
 
     # ====================
     # Logging Settings

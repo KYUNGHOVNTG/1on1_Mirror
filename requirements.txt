@@ -27,6 +27,12 @@ httpx==0.26.0
 anthropic==0.76.0
 openai==2.15.0
 
+# 구글 API (캘린더 연동)
+google-auth==2.27.0
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-python-client==2.115.0
+
 # 날짜/시간 처리
 python-dateutil==2.8.2
 
