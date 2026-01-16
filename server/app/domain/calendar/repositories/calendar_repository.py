@@ -134,6 +134,20 @@ class CalendarConnectionRepository:
             .values(is_active=False, updated_at=datetime.utcnow())
         )
 
+    async def delete(
+        self,
+        connection_id: int,
+    ) -> None:
+        """
+        캘린더 연동 삭제
+
+        Args:
+            connection_id: 캘린더 연동 ID
+        """
+        await self.db.execute(
+            delete(CalendarConnection).where(CalendarConnection.id == connection_id)
+        )
+
 
 class CalendarEventRepository:
     """
@@ -202,6 +216,24 @@ class CalendarEventRepository:
                     CalendarEvent.google_event_id == google_event_id,
                 )
             )
+        )
+        return result.scalar_one_or_none()
+
+    async def find_by_id(
+        self,
+        event_id: int,
+    ) -> Optional[CalendarEvent]:
+        """
+        이벤트 ID로 이벤트 조회
+
+        Args:
+            event_id: 이벤트 ID
+
+        Returns:
+            Optional[CalendarEvent]: 이벤트
+        """
+        result = await self.db.execute(
+            select(CalendarEvent).where(CalendarEvent.id == event_id)
         )
         return result.scalar_one_or_none()
 
@@ -278,6 +310,22 @@ class CalendarEventRepository:
                     CalendarEvent.calendar_connection_id == connection_id,
                     CalendarEvent.google_event_id.in_(google_event_ids),
                 )
+            )
+        )
+
+    async def delete_by_connection_id(
+        self,
+        connection_id: int,
+    ) -> None:
+        """
+        캘린더 연동 ID로 모든 이벤트 삭제
+
+        Args:
+            connection_id: 캘린더 연동 ID
+        """
+        await self.db.execute(
+            delete(CalendarEvent).where(
+                CalendarEvent.calendar_connection_id == connection_id
             )
         )
 

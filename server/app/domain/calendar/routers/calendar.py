@@ -16,6 +16,7 @@ from server.app.domain.calendar.service import CalendarService
 from server.app.domain.calendar.schemas.calendar import (
     CalendarConnectionCreate,
     CalendarConnectionResponse,
+    CalendarEventResponse,
     CalendarEventListResponse,
     CalendarSyncRequest,
     CalendarSyncResponse,
@@ -62,6 +63,80 @@ async def connect_calendar(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to connect calendar: {str(e)}",
+        )
+
+
+@router.get(
+    "/connection",
+    response_model=CalendarConnectionResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_calendar_connection(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> CalendarConnectionResponse:
+    """
+    캘린더 연동 상태 조회
+
+    Args:
+        user: 현재 인증된 사용자
+        db: 데이터베이스 세션
+
+    Returns:
+        CalendarConnectionResponse: 캘린더 연동 정보
+
+    Raises:
+        HTTPException: 연동 정보가 없는 경우 404 에러
+    """
+    try:
+        service = CalendarService(db)
+        return await service.get_connection(user_id=user.id)
+    except ValueError as e:
+        logger.error(f"Calendar connection not found: {e}", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"Failed to get calendar connection: {e}", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get calendar connection: {str(e)}",
+        )
+
+
+@router.delete(
+    "/connection",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_calendar_connection(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """
+    캘린더 연동 해제
+
+    Args:
+        user: 현재 인증된 사용자
+        db: 데이터베이스 세션
+
+    Raises:
+        HTTPException: 연동 정보가 없는 경우 404 에러
+    """
+    try:
+        service = CalendarService(db)
+        await service.delete_connection(user_id=user.id)
+    except ValueError as e:
+        logger.error(f"Calendar connection not found: {e}", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"Failed to delete calendar connection: {e}", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete calendar connection: {str(e)}",
         )
 
 
@@ -149,6 +224,47 @@ async def list_calendar_events(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list calendar events: {str(e)}",
+        )
+
+
+@router.get(
+    "/events/{event_id}",
+    response_model=CalendarEventResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_calendar_event(
+    event_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> CalendarEventResponse:
+    """
+    캘린더 이벤트 단건 조회
+
+    Args:
+        event_id: 이벤트 ID
+        user: 현재 인증된 사용자
+        db: 데이터베이스 세션
+
+    Returns:
+        CalendarEventResponse: 이벤트 상세 정보
+
+    Raises:
+        HTTPException: 이벤트를 찾을 수 없는 경우 404 에러
+    """
+    try:
+        service = CalendarService(db)
+        return await service.get_event(user_id=user.id, event_id=event_id)
+    except ValueError as e:
+        logger.error(f"Failed to get event: {e}", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"Failed to get calendar event: {e}", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get calendar event: {str(e)}",
         )
 
 

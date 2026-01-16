@@ -129,6 +129,70 @@ class CalendarService:
         logger.info(f"Calendar connection created: {connection.id}")
         return self.formatter.format_connection(connection)
 
+    async def get_connection(
+        self,
+        user_id: int,
+    ) -> CalendarConnectionResponse | None:
+        """
+        캘린더 연동 상태 조회
+
+        Args:
+            user_id: 사용자 ID
+
+        Returns:
+            CalendarConnectionResponse: 캘린더 연동 정보 (없으면 None)
+
+        Raises:
+            ValueError: 연동 정보가 없는 경우
+        """
+        logger.info(f"Getting calendar connection for user: {user_id}")
+
+        # 캘린더 연동 조회
+        connection = await self.connection_repo.find_by_user_id(
+            user_id=user_id,
+            calendar_id="primary",
+        )
+
+        if not connection:
+            raise ValueError("No calendar connection found for this user")
+
+        logger.info(f"Calendar connection found: {connection.id}")
+        return self.formatter.format_connection(connection)
+
+    async def delete_connection(
+        self,
+        user_id: int,
+    ) -> None:
+        """
+        캘린더 연동 해제
+
+        Args:
+            user_id: 사용자 ID
+
+        Raises:
+            ValueError: 연동 정보가 없는 경우
+        """
+        logger.info(f"Deleting calendar connection for user: {user_id}")
+
+        # 캘린더 연동 조회
+        connection = await self.connection_repo.find_by_user_id(
+            user_id=user_id,
+            calendar_id="primary",
+        )
+
+        if not connection:
+            raise ValueError("No calendar connection found for this user")
+
+        # 연결된 모든 이벤트 삭제
+        await self.event_repo.delete_by_connection_id(connection.id)
+
+        # 연동 삭제
+        await self.connection_repo.delete(connection.id)
+
+        await self.db.commit()
+
+        logger.info(f"Calendar connection deleted: {connection.id}")
+
     async def sync_events(
         self,
         user_id: int,
@@ -315,6 +379,48 @@ class CalendarService:
             filtered_count=filtered_count,
             selected_count=selected_count,
         )
+
+    async def get_event(
+        self,
+        user_id: int,
+        event_id: int,
+    ) -> CalendarEvent:
+        """
+        캘린더 이벤트 단건 조회
+
+        Args:
+            user_id: 사용자 ID
+            event_id: 이벤트 ID
+
+        Returns:
+            CalendarEvent: 이벤트 상세 정보
+
+        Raises:
+            ValueError: 연동 정보가 없거나 이벤트를 찾을 수 없는 경우
+        """
+        logger.info(f"Getting calendar event {event_id} for user: {user_id}")
+
+        # 캘린더 연동 조회
+        connection = await self.connection_repo.find_by_user_id(
+            user_id=user_id,
+            calendar_id="primary",
+        )
+
+        if not connection:
+            raise ValueError("No calendar connection found")
+
+        # 이벤트 조회
+        event = await self.event_repo.find_by_id(event_id)
+
+        if not event:
+            raise ValueError(f"Event not found: {event_id}")
+
+        # 이벤트가 해당 사용자의 것인지 확인
+        if event.calendar_connection_id != connection.id:
+            raise ValueError(f"Event {event_id} does not belong to user {user_id}")
+
+        logger.info(f"Calendar event found: {event_id}")
+        return self.formatter.format_event(event)
 
     async def select_events(
         self,
