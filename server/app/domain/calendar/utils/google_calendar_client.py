@@ -26,7 +26,6 @@ class GoogleCalendarClient:
 
     SCOPES = [
         "https://www.googleapis.com/auth/calendar.readonly",
-        "https://www.googleapis.com/auth/calendar.events.readonly",
     ]
 
     def __init__(

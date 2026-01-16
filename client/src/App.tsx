@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './domains/auth/pages/LoginPage';
 import { DashboardPage } from './domains/dashboard/pages/DashboardPage';
+import { CalendarCallbackPage, CalendarEventListPage } from './domains/calendar';
 import { useAuthStore } from './core/store/useAuthStore';
 import { LoadingOverlay } from './core/loading';
 
@@ -28,6 +29,22 @@ function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calendar/callback"
+          element={
+            <ProtectedRoute>
+              <CalendarCallbackPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calendar/events"
+          element={
+            <ProtectedRoute>
+              <CalendarEventListPage />
             </ProtectedRoute>
           }
         />

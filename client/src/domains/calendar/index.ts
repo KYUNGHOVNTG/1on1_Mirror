@@ -1,35 +1,17 @@
 /**
  * Calendar Domain Exports
  *
- * 캘린더 도메인의 모든 공개 API를 내보냅니다.
+ * 캘린더 도메인의 컴포넌트, 훅, 타입 등을 내보냅니다.
  */
 
-// Types
-export type {
-    CalendarConnectionCreate,
-    CalendarConnection,
-    CalendarEvent,
-    CalendarEventListResponse,
-    CalendarEventListParams,
-    CalendarSyncRequest,
-    CalendarSyncResponse,
-    EventSelectionRequest,
-    EventSelectionResponse,
-} from './types';
+export * from './types';
+export * from './api';
+export * from './store';
 
-// API Functions
-export {
-    connectCalendar,
-    getCalendarConnection,
-    disconnectCalendar,
-    syncCalendarEvents,
-    listCalendarEvents,
-    getCalendarEvent,
-    selectCalendarEvents,
-    deselectCalendarEvents,
-    selectAllEvents,
-    deselectAllEvents,
-} from './api';
+// Components
+export { CalendarConnectButton } from './components/CalendarConnectButton';
+export { CalendarConnectionStatus } from './components/CalendarConnectionStatus';
 
-// Store
-export { useCalendarStore } from './store';
+// Pages
+export { CalendarCallbackPage } from './pages/CalendarCallbackPage';
+export { CalendarEventListPage } from './pages/CalendarEventListPage';

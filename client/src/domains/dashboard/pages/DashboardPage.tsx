@@ -17,6 +17,7 @@ import {
   MessageSquare,
   CheckCircle2,
 } from 'lucide-react';
+import { CalendarConnectionStatus } from '@/domains/calendar';
 import { cn } from '@/core/utils';
 
 interface StatCardProps {
@@ -73,7 +74,7 @@ export const DashboardPage: React.FC = () => {
         <div className="flex items-start justify-between mb-2">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              안녕하세요, {user?.username || user?.name || '사용자'}님 👋
+              안녕하세요, {user?.name || user?.email || '사용자'}님 👋
             </h1>
             <p className="text-slate-600">
               오늘도 성장하는 하루를 만들어보세요
@@ -120,6 +121,11 @@ export const DashboardPage: React.FC = () => {
           icon={Calendar}
           colorClass="bg-gradient-to-br from-orange-500 to-orange-600"
         />
+      </div>
+
+      {/* Calendar Connection Status */}
+      <div className="mb-8">
+        <CalendarConnectionStatus />
       </div>
 
       {/* Bento Grid */}

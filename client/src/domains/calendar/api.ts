@@ -8,7 +8,7 @@
  */
 
 import { apiClient } from '@/core/api';
-import type { ApiResponse } from '@/core/api';
+
 import type {
     CalendarConnectionCreate,
     CalendarConnection,
@@ -34,11 +34,11 @@ import type {
 export async function connectCalendar(
     data: CalendarConnectionCreate
 ): Promise<CalendarConnection> {
-    const response = await apiClient.post<ApiResponse<CalendarConnection>>(
+    const response = await apiClient.post<CalendarConnection>(
         '/v1/calendar/connect',
         data
     );
-    return response.data.data;
+    return response.data;
 }
 
 /**
@@ -48,13 +48,13 @@ export async function connectCalendar(
  */
 export async function getCalendarConnection(): Promise<CalendarConnection | null> {
     try {
-        const response = await apiClient.get<ApiResponse<CalendarConnection>>(
+        const response = await apiClient.get<CalendarConnection>(
             '/v1/calendar/connection'
         );
-        return response.data.data;
+        return response.data;
     } catch (error: any) {
         // 404 에러는 연동이 없는 경우이므로 null 반환
-        if (error.status === 404) {
+        if (error.response?.status === 404) {
             return null;
         }
         throw error;
@@ -83,11 +83,11 @@ export async function disconnectCalendar(): Promise<void> {
 export async function syncCalendarEvents(
     request?: CalendarSyncRequest
 ): Promise<CalendarSyncResponse> {
-    const response = await apiClient.post<ApiResponse<CalendarSyncResponse>>(
+    const response = await apiClient.post<CalendarSyncResponse>(
         '/v1/calendar/sync',
         request || {}
     );
-    return response.data.data;
+    return response.data;
 }
 
 // ====================
@@ -103,11 +103,11 @@ export async function syncCalendarEvents(
 export async function listCalendarEvents(
     params?: CalendarEventListParams
 ): Promise<CalendarEventListResponse> {
-    const response = await apiClient.get<ApiResponse<CalendarEventListResponse>>(
+    const response = await apiClient.get<CalendarEventListResponse>(
         '/v1/calendar/events',
         { params }
     );
-    return response.data.data;
+    return response.data;
 }
 
 /**
@@ -117,10 +117,10 @@ export async function listCalendarEvents(
  * @returns 이벤트 상세 정보
  */
 export async function getCalendarEvent(eventId: number): Promise<CalendarEvent> {
-    const response = await apiClient.get<ApiResponse<CalendarEvent>>(
+    const response = await apiClient.get<CalendarEvent>(
         `/v1/calendar/events/${eventId}`
     );
-    return response.data.data;
+    return response.data;
 }
 
 // ====================
@@ -136,11 +136,11 @@ export async function getCalendarEvent(eventId: number): Promise<CalendarEvent> 
 export async function selectCalendarEvents(
     data: EventSelectionRequest
 ): Promise<EventSelectionResponse> {
-    const response = await apiClient.post<ApiResponse<EventSelectionResponse>>(
+    const response = await apiClient.post<EventSelectionResponse>(
         '/v1/calendar/events/select',
         data
     );
-    return response.data.data;
+    return response.data;
 }
 
 /**
@@ -152,11 +152,11 @@ export async function selectCalendarEvents(
 export async function deselectCalendarEvents(
     data: EventSelectionRequest
 ): Promise<EventSelectionResponse> {
-    const response = await apiClient.post<ApiResponse<EventSelectionResponse>>(
+    const response = await apiClient.post<EventSelectionResponse>(
         '/v1/calendar/events/deselect',
         data
     );
-    return response.data.data;
+    return response.data;
 }
 
 /**

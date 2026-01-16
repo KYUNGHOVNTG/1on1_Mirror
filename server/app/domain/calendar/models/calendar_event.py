@@ -42,7 +42,7 @@ class CalendarEvent(Base):
 
     # Attendees
     attendees_count: Mapped[int] = mapped_column(Integer, default=0)
-    attendees_emails: Mapped[dict] = mapped_column(JSON, default=list)
+    attendees_emails: Mapped[list] = mapped_column(JSON, default=list)
 
     # Filtering & Selection
     is_filtered: Mapped[bool] = mapped_column(Boolean, default=False, index=True)

@@ -89,8 +89,11 @@ async def get_calendar_connection(
         HTTPException: 연동 정보가 없는 경우 404 에러
     """
     try:
+        logger.info(f"Checking calendar connection for user_id={user.id}")
         service = CalendarService(db)
-        return await service.get_connection(user_id=user.id)
+        connection = await service.get_connection(user_id=user.id)
+        logger.info(f"Connection found for user_id={user.id}: {connection.id if connection else 'None'}")
+        return connection
     except ValueError as e:
         logger.error(f"Calendar connection not found: {e}", extra={"error": str(e)})
         raise HTTPException(
