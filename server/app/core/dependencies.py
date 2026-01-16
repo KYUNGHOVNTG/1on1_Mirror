@@ -7,10 +7,13 @@ FastAPI 공통 의존성 (Dependencies)
 from typing import Optional
 
 from fastapi import Depends, Header, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from server.app.core.config import settings
 from server.app.core.database import get_db
+from server.app.core.security import verify_token
+from server.app.domain.user.models.user import User
 
 
 # ====================
@@ -41,27 +44,25 @@ class AuthenticationChecker:
     인증 검증 클래스
 
     JWT 토큰 검증, API 키 검증 등의 인증 로직을 구현합니다.
-    현재는 스텁으로 구현되어 있습니다.
     """
 
-    async def verify_token(self, authorization: Optional[str] = Header(None)) -> dict:
+    async def verify_token(
+        self,
+        authorization: Optional[str] = Header(None),
+        db: AsyncSession = Depends(get_database_session)
+    ) -> User:
         """
-        JWT 토큰을 검증합니다.
+        JWT 토큰을 검증하고 사용자 정보를 반환합니다.
 
         Args:
             authorization: Authorization 헤더 (Bearer {token})
+            db: 데이터베이스 세션
 
         Returns:
-            dict: 검증된 사용자 정보
+            User: 검증된 사용자 객체
 
         Raises:
             HTTPException: 토큰이 유효하지 않은 경우
-
-        TODO: 실제 JWT 토큰 검증 로직 구현
-            - JWT 디코딩
-            - 토큰 만료 확인
-            - 사용자 존재 여부 확인
-            - 토큰 블랙리스트 확인
         """
         if not authorization:
             raise HTTPException(
@@ -70,15 +71,52 @@ class AuthenticationChecker:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # TODO: JWT 토큰 파싱 및 검증
-        # scheme, token = authorization.split()
-        # if scheme.lower() != "bearer":
-        #     raise HTTPException(...)
-        # payload = decode_jwt(token)
-        # return payload
+        # Bearer 토큰 파싱
+        try:
+            scheme, token = authorization.split()
+            if scheme.lower() != "bearer":
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid authentication scheme",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authorization header format",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
-        # 스텁: 임시 사용자 정보 반환
-        return {"user_id": 1, "username": "test_user"}
+        # JWT 토큰 검증
+        payload = verify_token(token, token_type="access")
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # 사용자 ID 추출
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # 데이터베이스에서 사용자 조회
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return user
 
     async def verify_api_key(self, x_api_key: Optional[str] = Header(None)) -> dict:
         """
@@ -124,28 +162,29 @@ auth_checker = AuthenticationChecker()
 
 
 async def get_current_user(
-    user_info: dict = Depends(auth_checker.verify_token),
-) -> dict:
+    user: User = Depends(auth_checker.verify_token),
+) -> User:
     """
     현재 인증된 사용자 정보를 반환합니다.
 
     사용법:
         @router.get("/me")
-        async def get_me(user: dict = Depends(get_current_user)):
+        async def get_me(user: User = Depends(get_current_user)):
             return user
 
     Args:
-        user_info: 검증된 사용자 정보
+        user: 검증된 사용자 객체
 
     Returns:
-        dict: 사용자 정보
+        User: 사용자 객체
     """
-    return user_info
+    return user
 
 
 async def get_optional_current_user(
     authorization: Optional[str] = Header(None),
-) -> Optional[dict]:
+    db: AsyncSession = Depends(get_database_session),
+) -> Optional[User]:
     """
     선택적 인증: 토큰이 있으면 검증하고, 없으면 None 반환
 
@@ -153,7 +192,7 @@ async def get_optional_current_user(
 
     사용법:
         @router.get("/items")
-        async def get_items(user: Optional[dict] = Depends(get_optional_current_user)):
+        async def get_items(user: Optional[User] = Depends(get_optional_current_user)):
             if user:
                 # 인증된 사용자용 로직
             else:
@@ -161,15 +200,16 @@ async def get_optional_current_user(
 
     Args:
         authorization: Authorization 헤더
+        db: 데이터베이스 세션
 
     Returns:
-        Optional[dict]: 사용자 정보 또는 None
+        Optional[User]: 사용자 객체 또는 None
     """
     if not authorization:
         return None
 
     try:
-        return await auth_checker.verify_token(authorization)
+        return await auth_checker.verify_token(authorization, db)
     except HTTPException:
         return None
 
@@ -256,7 +296,7 @@ class RequestContext:
 
 
 async def get_request_context(
-    user: Optional[dict] = Depends(get_optional_current_user),
+    user: Optional[User] = Depends(get_optional_current_user),
     x_request_id: Optional[str] = Header(None),
     x_forwarded_for: Optional[str] = Header(None),
 ) -> RequestContext:
@@ -271,14 +311,14 @@ async def get_request_context(
             # context.user_id, context.request_id 등을 사용
 
     Args:
-        user: 현재 사용자 정보 (선택)
+        user: 현재 사용자 객체 (선택)
         x_request_id: 요청 추적 ID
         x_forwarded_for: 클라이언트 IP (프록시 경유 시)
 
     Returns:
         RequestContext: 요청 컨텍스트
     """
-    user_id = user.get("user_id") if user else None
+    user_id = user.id if user else None
     client_ip = x_forwarded_for.split(",")[0] if x_forwarded_for else None
 
     return RequestContext(

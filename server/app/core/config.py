@@ -132,6 +132,24 @@ class Settings(BaseSettings):
         default=30,
         description="액세스 토큰 만료 시간 (분)"
     )
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(
+        default=30,
+        description="리프레시 토큰 만료 시간 (일)"
+    )
+    ALGORITHM: str = Field(
+        default="HS256",
+        description="JWT 알고리즘"
+    )
+
+    # OAuth Settings
+    GOOGLE_CLIENT_ID: str = Field(
+        default="",
+        description="Google OAuth Client ID"
+    )
+    GOOGLE_CLIENT_SECRET: str = Field(
+        default="",
+        description="Google OAuth Client Secret"
+    )
 
     # ====================
     # Logging Settings
