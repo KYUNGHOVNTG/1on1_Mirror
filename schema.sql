@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(100) NOT NULL,
     role VARCHAR(20) DEFAULT 'member',
     profile_image VARCHAR(500),
+    refresh_token TEXT,
+    refresh_token_expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

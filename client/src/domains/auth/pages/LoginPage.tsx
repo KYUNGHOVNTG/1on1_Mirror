@@ -1,38 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 import { Zap } from 'lucide-react';
-import { jwtDecode } from 'jwt-decode';
 import { useAuthStore } from '../../../core/store/useAuthStore';
+import { apiClient } from '../../../core/api/client';
 
 export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
     const { login } = useAuthStore();
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     // .env에서 Client ID 가져오기 (없으면 빈 문자열)
     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
-    const handleSuccess = (credentialResponse: any) => {
+    const handleSuccess = async (credentialResponse: any) => {
         try {
-            if (credentialResponse.credential) {
-                const decoded: any = jwtDecode(credentialResponse.credential);
-                console.log('Login Success:', decoded);
+            setError(null);
+            setIsLoading(true);
 
-                // 간단한 유저 정보 저장 (실제로는 백엔드 검증 필요)
-                login(
-                    {
-                        id: decoded.sub,
-                        email: decoded.email,
-                        name: decoded.name,
-                        picture: decoded.picture
-                    },
-                    credentialResponse.credential
-                );
+            if (credentialResponse.credential) {
+                // 서버에 Google ID Token 전송
+                const response = await apiClient.post('/v1/auth/google/login', {
+                    id_token: credentialResponse.credential
+                });
+
+                const { user, tokens } = response.data;
+
+                // AuthStore에 사용자 정보 및 토큰 저장
+                login(user, tokens);
+
+                console.log('Login Success:', user);
 
                 navigate('/dashboard');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Login Failed', error);
+            setError(error.message || '로그인에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -53,15 +59,30 @@ export const LoginPage: React.FC = () => {
                             VITE_GOOGLE_CLIENT_ID가 설정되지 않았습니다.
                         </div>
                     ) : (
-                        <div className="w-full flex justify-center">
-                            <GoogleLogin
-                                onSuccess={handleSuccess}
-                                onError={() => {
-                                    console.log('Login Failed');
-                                }}
-                                useOneTap
-                            />
-                        </div>
+                        <>
+                            {error && (
+                                <div className="w-full p-4 bg-red-50 text-red-600 rounded-lg text-sm mb-4">
+                                    {error}
+                                </div>
+                            )}
+                            {isLoading ? (
+                                <div className="w-full flex justify-center items-center py-4">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                    <span className="ml-3 text-slate-600">로그인 중...</span>
+                                </div>
+                            ) : (
+                                <div className="w-full flex justify-center">
+                                    <GoogleLogin
+                                        onSuccess={handleSuccess}
+                                        onError={() => {
+                                            console.log('Google Login Failed');
+                                            setError('Google 로그인에 실패했습니다.');
+                                        }}
+                                        useOneTap
+                                    />
+                                </div>
+                            )}
+                        </>
                     )}
 
                     <p className="mt-8 text-xs text-slate-400">

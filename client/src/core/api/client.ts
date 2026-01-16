@@ -9,13 +9,19 @@
  * const response = await apiClient.get('/users');
  */
 
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, AxiosError } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { LoadingManager } from '../loading/LoadingManager';
 import { ApiErrorHandler } from '../errors/ApiErrorHandler';
+import { useAuthStore } from '../store/useAuthStore';
 
 class ApiClient {
   private instance: AxiosInstance;
   private static _instance: ApiClient;
+  private isRefreshing = false;
+  private failedQueue: Array<{
+    resolve: (value?: any) => void;
+    reject: (error?: any) => void;
+  }> = [];
 
   private constructor() {
     this.instance = axios.create({
@@ -40,6 +46,47 @@ class ApiClient {
   }
 
   /**
+   * 실패한 요청 큐 처리
+   */
+  private processQueue(error: any, token: string | null = null): void {
+    this.failedQueue.forEach((prom) => {
+      if (error) {
+        prom.reject(error);
+      } else {
+        prom.resolve(token);
+      }
+    });
+
+    this.failedQueue = [];
+  }
+
+  /**
+   * Refresh Token을 사용하여 Access Token 갱신
+   */
+  private async refreshAccessToken(): Promise<string> {
+    const { refreshToken, updateTokens, logout } = useAuthStore.getState();
+
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/v1/auth/refresh`,
+        { refresh_token: refreshToken }
+      );
+
+      const tokens = response.data;
+      updateTokens(tokens);
+
+      return tokens.access_token;
+    } catch (error) {
+      logout();
+      throw error;
+    }
+  }
+
+  /**
    * Request/Response Interceptors 설정
    *
    * 전역 Loading 및 Error 처리를 자동화합니다.
@@ -47,18 +94,18 @@ class ApiClient {
   private setupInterceptors(): void {
     // Request Interceptor
     this.instance.interceptors.request.use(
-      (config) => {
+      (config: InternalAxiosRequestConfig) => {
         // 전역 로딩 시작
         // config.skipLoading이 true이면 로딩 표시 안 함
         if (!(config as any).skipLoading) {
           LoadingManager.show();
         }
 
-        // TODO: 인증 토큰 추가
-        // const token = localStorage.getItem('auth_token');
-        // if (token) {
-        //   config.headers.Authorization = `Bearer ${token}`;
-        // }
+        // 인증 토큰 추가
+        const { accessToken } = useAuthStore.getState();
+        if (accessToken && config.headers) {
+          config.headers.Authorization = `Bearer ${accessToken}`;
+        }
 
         return config;
       },
@@ -76,18 +123,61 @@ class ApiClient {
         LoadingManager.hide();
         return response;
       },
-      (error: AxiosError) => {
+      async (error: AxiosError) => {
         // 응답 실패 시 로딩 숨김
         LoadingManager.hide();
+
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+        // 401 에러이고 재시도하지 않은 요청인 경우
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          if (this.isRefreshing) {
+            // 이미 토큰 갱신 중이면 큐에 추가
+            return new Promise((resolve, reject) => {
+              this.failedQueue.push({ resolve, reject });
+            })
+              .then((token) => {
+                if (originalRequest.headers) {
+                  originalRequest.headers.Authorization = `Bearer ${token}`;
+                }
+                return this.instance(originalRequest);
+              })
+              .catch((err) => {
+                return Promise.reject(err);
+              });
+          }
+
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          try {
+            const newAccessToken = await this.refreshAccessToken();
+            this.processQueue(null, newAccessToken);
+
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            }
+
+            return this.instance(originalRequest);
+          } catch (refreshError) {
+            this.processQueue(refreshError, null);
+
+            // 토큰 갱신 실패 시 로그인 페이지로 리다이렉트
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login';
+            }
+
+            return Promise.reject(refreshError);
+          } finally {
+            this.isRefreshing = false;
+          }
+        }
 
         // 에러 처리
         const errorData = ApiErrorHandler.handle(error);
 
-        // 특정 상태 코드별 추가 처리
+        // 인증 에러 처리 (토큰 갱신 시도 후에도 실패한 경우)
         if (ApiErrorHandler.isAuthError(error)) {
-          // TODO: 인증 에러 처리
-          // - 로그인 페이지로 리다이렉트
-          // - 또는 토큰 갱신 시도
           console.warn('🔐 인증 에러:', errorData.message);
         }
 

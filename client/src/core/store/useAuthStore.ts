@@ -1,43 +1,77 @@
 /**
- * Auth Store (Google OAuth)
+ * Auth Store (Google OAuth + JWT)
  *
- * 인증 상태 관리
+ * 인증 상태 관리 및 토큰 저장
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
-  picture?: string;
-  // TODO: 추가 사용자 정보
+  profile_image?: string;
+  role: string;
+  company_id: number;
+  department_id?: number;
+}
+
+export interface Tokens {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
 }
 
 interface AuthState {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
 
   // Actions
-  login: (user: User, token: string) => void;
+  login: (user: User, tokens: Tokens) => void;
   logout: () => void;
+  updateTokens: (tokens: Tokens) => void;
+  setUser: (user: User) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
+      accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
 
-      login: (user: User, token: string) => {
-        set({ user, token, isAuthenticated: true });
+      login: (user: User, tokens: Tokens) => {
+        set({
+          user,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          isAuthenticated: true,
+        });
       },
 
       logout: () => {
-        set({ user: null, token: null, isAuthenticated: false });
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+        });
+      },
+
+      updateTokens: (tokens: Tokens) => {
+        set({
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+        });
+      },
+
+      setUser: (user: User) => {
+        set({ user });
       },
     }),
     {
