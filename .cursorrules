@@ -119,7 +119,63 @@ raise NotFoundException(
   })
   ```
 
-### 5. 파일 배치 규칙
+### 5. 데이터베이스 스키마 변경 규칙 ⚠️
+
+**중요**: DB 스키마 변경 시 반드시 아래 절차를 따르세요. 소스 코드와 DB 불일치로 인한 런타임 오류를 방지합니다.
+
+#### 스키마 변경 절차:
+
+1. **SQLAlchemy 모델 수정** (`server/app/domain/{domain}/models/`)
+2. **SQL 파일 업데이트** (`schema.sql` 파일의 CREATE TABLE 구문 수정)
+3. **마이그레이션 SQL 생성** (아래 두 가지 모두 제공):
+
+```sql
+-- migrations/YYYYMMDD_description.sql
+-- 예: migrations/20260116_add_refresh_token_to_users.sql
+
+-- 변경 사항 적용
+ALTER TABLE users
+ADD COLUMN refresh_token TEXT,
+ADD COLUMN refresh_token_expires_at TIMESTAMPTZ;
+
+-- 롤백 (필요시)
+-- ALTER TABLE users
+-- DROP COLUMN refresh_token,
+-- DROP COLUMN refresh_token_expires_at;
+```
+
+4. **실행 방법 명시**:
+```bash
+# Supabase SQL Editor 또는 psql에서 실행
+psql $DATABASE_URL -f migrations/20260116_add_refresh_token_to_users.sql
+
+# 또는 Supabase Dashboard > SQL Editor에 붙여넣기
+```
+
+#### AI 작업 시 필수 사항:
+
+- **절대 모델만 수정 금지**: SQLAlchemy 모델을 수정했으면 반드시 실행 가능한 SQL도 함께 제공
+- **두 가지 형태로 제공**:
+  1. 별도 마이그레이션 SQL 파일 (migrations/ 폴더)
+  2. 직접 복사-붙여넣기 가능한 SQL 쿼리 (코드 블록)
+- **schema.sql 업데이트**: CREATE TABLE 구문도 함께 수정하여 신규 개발자가 초기 세팅 시 정합성 유지
+- **롤백 쿼리 포함**: 문제 발생 시 되돌릴 수 있는 SQL도 주석으로 제공
+
+#### 예시:
+
+```python
+# ✅ 올바른 작업 순서
+1. SQLAlchemy 모델에 컬럼 추가
+2. schema.sql의 CREATE TABLE 구문 업데이트
+3. 마이그레이션 SQL 파일 생성 및 제공
+4. 사용자에게 실행 방법 안내
+
+# ❌ 잘못된 작업
+1. SQLAlchemy 모델만 수정
+2. "데이터베이스에 컬럼을 추가하세요" (구체적 방법 없음)
+```
+
+### 6. 파일 배치 규칙
 
 ```
 server/app/domain/{domain_name}/
@@ -135,6 +191,9 @@ server/app/domain/{domain_name}/
 │   └── __init__.py
 └── formatters/             # 응답 포맷팅
     └── __init__.py
+
+migrations/                 # 데이터베이스 마이그레이션 (프로젝트 루트)
+└── YYYYMMDD_description.sql
 ```
 
 ---

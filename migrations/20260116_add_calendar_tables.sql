@@ -1,69 +1,10 @@
--- 1. Create Companies Table
-CREATE TABLE IF NOT EXISTS companies (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    business_number VARCHAR(20),
-    domain VARCHAR(100) NOT NULL UNIQUE,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS ix_companies_domain ON companies(domain);
+-- ====================
+-- 구글 캘린더 연동 테이블 추가
+-- 생성일: 2026-01-16
+-- 설명: 구글 캘린더 연동, 이벤트 동기화, 이벤트 선택 기능을 위한 테이블
+-- ====================
 
--- 2. Create Departments Table (Self-referencing for Hierarchy)
-CREATE TABLE IF NOT EXISTS departments (
-    id SERIAL PRIMARY KEY,
-    company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-    parent_id INTEGER REFERENCES departments(id),
-    name VARCHAR(100) NOT NULL
-);
-CREATE INDEX IF NOT EXISTS ix_departments_company_id ON departments(company_id);
-
--- 3. Create Users Table
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-    department_id INTEGER REFERENCES departments(id),
-    email VARCHAR(255) NOT NULL UNIQUE,
-    google_id VARCHAR(255) NOT NULL UNIQUE,
-    name VARCHAR(100) NOT NULL,
-    role VARCHAR(20) DEFAULT 'member',
-    profile_image VARCHAR(500),
-    refresh_token TEXT,
-    refresh_token_expires_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS ix_users_company_id ON users(company_id);
-CREATE INDEX IF NOT EXISTS ix_users_email ON users(email);
-
--- 4. Create Goals Table
-CREATE TABLE IF NOT EXISTS goals (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    criteria TEXT NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending',
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS ix_goals_user_id ON goals(user_id);
-
--- 5. Create OneOnOneSessions Table
-CREATE TABLE IF NOT EXISTS one_on_one_sessions (
-    id SERIAL PRIMARY KEY,
-    company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id),
-    manager_id INTEGER NOT NULL REFERENCES users(id),
-    topic VARCHAR(200) NOT NULL,
-    status VARCHAR(20) DEFAULT 'scheduled',
-    scheduled_at TIMESTAMPTZ NOT NULL,
-    report_data TEXT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS ix_one_on_one_sessions_company_id ON one_on_one_sessions(company_id);
-
--- 6. Create Calendar Connections Table
+-- 1. calendar_connections: 사용자별 구글 캘린더 연동 정보
 CREATE TABLE IF NOT EXISTS calendar_connections (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -82,7 +23,7 @@ CREATE TABLE IF NOT EXISTS calendar_connections (
 CREATE INDEX IF NOT EXISTS ix_calendar_connections_user_id ON calendar_connections(user_id);
 CREATE INDEX IF NOT EXISTS ix_calendar_connections_is_active ON calendar_connections(is_active);
 
--- 7. Create Calendar Events Table
+-- 2. calendar_events: 동기화된 캘린더 이벤트
 CREATE TABLE IF NOT EXISTS calendar_events (
     id SERIAL PRIMARY KEY,
     calendar_connection_id INTEGER NOT NULL REFERENCES calendar_connections(id) ON DELETE CASCADE,
@@ -107,7 +48,7 @@ CREATE INDEX IF NOT EXISTS ix_calendar_events_start_time ON calendar_events(star
 CREATE INDEX IF NOT EXISTS ix_calendar_events_is_filtered ON calendar_events(is_filtered);
 CREATE INDEX IF NOT EXISTS ix_calendar_events_is_selected ON calendar_events(is_selected);
 
--- 8. Create Calendar Event Selections Table
+-- 3. calendar_event_selections: 선택된 이벤트와 1:1 세션 연결
 CREATE TABLE IF NOT EXISTS calendar_event_selections (
     id SERIAL PRIMARY KEY,
     calendar_event_id INTEGER NOT NULL REFERENCES calendar_events(id) ON DELETE CASCADE,
@@ -118,3 +59,10 @@ CREATE TABLE IF NOT EXISTS calendar_event_selections (
 );
 CREATE INDEX IF NOT EXISTS ix_calendar_event_selections_event_id ON calendar_event_selections(calendar_event_id);
 CREATE INDEX IF NOT EXISTS ix_calendar_event_selections_session_id ON calendar_event_selections(one_on_one_session_id);
+
+-- ====================
+-- 롤백 SQL (문제 발생 시 실행)
+-- ====================
+-- DROP TABLE IF EXISTS calendar_event_selections CASCADE;
+-- DROP TABLE IF EXISTS calendar_events CASCADE;
+-- DROP TABLE IF EXISTS calendar_connections CASCADE;

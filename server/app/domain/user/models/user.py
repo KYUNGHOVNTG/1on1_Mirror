@@ -49,3 +49,8 @@ class User(Base):
     company: Mapped["Company"] = relationship("Company", back_populates="users")
     department: Mapped[Optional["Department"]] = relationship("Department", back_populates="users")
     goals: Mapped[List["Goal"]] = relationship("Goal", back_populates="user")
+    calendar_connections: Mapped[List["CalendarConnection"]] = relationship(
+        "CalendarConnection",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
